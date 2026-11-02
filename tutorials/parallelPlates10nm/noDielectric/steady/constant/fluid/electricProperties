@@ -1,2 +1,8 @@
-FoamFile { version 2.0; format ascii; class dictionary; object electricProperties; }
-epsilonR 1;
+FoamFile
+{
+    version                 2.0;
+    format                  ascii;
+    class                   dictionary;
+    object                  electricProperties;
+}
+epsilonR                1;

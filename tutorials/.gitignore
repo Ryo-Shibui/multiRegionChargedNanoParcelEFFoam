@@ -1,0 +1,6 @@
+# Pristine tutorial inputs are versioned; generated run state is not.
+!**/0.orig/
+**/0/
+**/constant/*/polyMesh/
+**/steady_copy.json
+**/results/

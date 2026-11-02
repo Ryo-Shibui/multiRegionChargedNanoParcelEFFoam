@@ -1,0 +1,61 @@
+FoamFile
+{
+    version                 2.0;
+    format                  ascii;
+    class                   dictionary;
+    object                  blockMeshDict;
+}
+scale                   1;
+vertices
+(
+(0 0 0)
+(.02 0 0)
+(.02 0.001 0)
+(0 0.001 0)
+(0 0 .001)
+(.02 0 .001)
+(.02 0.001 .001)
+(0 0.001 .001)
+);
+blocks
+(
+hex (0 1 2 3 4 5 6 7) (20 5 1) simpleGrading (1 1 1)
+);
+edges                   ();
+boundary
+(
+inlet
+{
+    type                    patch;
+    faces                   ((1 2 6 5));
+}
+outlet
+{
+    type                    patch;
+    faces                   ((0 4 7 3));
+}
+lowerElectrode
+{
+    type                    wall;
+    faces                   ((0 1 5 4));
+}
+dielectric_to_fluid
+{
+    type                    mappedWall;
+    sampleMode              nearestPatchFace;
+    sampleRegion            fluid;
+    samplePatch             fluid_to_dielectric;
+    faces                   ((3 7 6 2));
+}
+front
+{
+    type                    symmetryPlane;
+    faces                   ((0 3 2 1));
+}
+back
+{
+    type                    symmetryPlane;
+    faces                   ((4 5 6 7));
+}
+);
+mergePatchPairs         ();

@@ -1,2 +1,8 @@
-species (N2 O2 H2O);
-reactions {}
+species
+(
+N2
+H2O
+);
+reactions
+{
+}

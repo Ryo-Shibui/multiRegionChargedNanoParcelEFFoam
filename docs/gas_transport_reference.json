@@ -1,0 +1,103 @@
+{
+  "sources": {
+    "Lemmon2004": {
+      "doi": "10.1023/B:IJOT.0000022327.04529.f3",
+      "url": "https://trc.nist.gov/refprop/FAQ/NAO.PDF",
+      "location": "Eq.2, Tables I and II, printed pp23-24"
+    },
+    "Huber2009": {
+      "doi": "10.1063/1.3088050",
+      "url": "https://srd.nist.gov/jpcrdreprint/1.3088050.pdf",
+      "location": "Eq.11 and Table2, printed p109"
+    },
+    "MarreroMason1972": {
+      "doi": "10.1063/1.3253094",
+      "url": "https://srd.nist.gov/jpcrdreprint/1.3253094.pdf",
+      "location": "Table13 printed p35; H2O-N2 comments p82; Figure76 p83"
+    },
+    "Burgess2024": {
+      "doi": "10.6028/NIST.TN.2279",
+      "url": "https://nvlpubs.nist.gov/nistpubs/TechnicalNotes/NIST.TN.2279.pdf",
+      "location": "Table1a printed p8; equation definition p7; reference25 Hellmann2019"
+    }
+  },
+  "fit_description": {
+    "model": "mu[Pa.s]=As*T[K]^1.5/(T[K]+Ts)",
+    "As_unit": "Pa.s.K^-0.5",
+    "Ts_unit": "K",
+    "target": "source zero-density viscosity",
+    "training": "301 uniformly spaced points at 1 K spacing from300 through600K",
+    "objective": "unweighted sum of squared relative residuals (mu_fit/mu_source-1)",
+    "validation": "30001 uniformly spaced points from300 through600K",
+    "caveat": "fit error is relative to source correlation, not an experimental uncertainty; no validation outside fit interval"
+  },
+  "species": {
+    "N2": {
+      "As": 1.4525113378005044e-06,
+      "Ts": 123.02751260895496,
+      "source": "Lemmon2004",
+      "max_abs_relative_error_pct": 0.1986074898490675,
+      "rms_relative_error_pct": 0.07838238971637487,
+      "relative_error_pct_at_320K": -0.10180938779014159,
+      "mu_source_320_Pa_s": 1.8786945649143304e-05,
+      "old_shared_constants_error_320_pct": 3.8352837712193555,
+      "old_shared_constants_max_error_pct": 7.831940328303455
+    },
+    "O2": {
+      "As": 1.7476228876785538e-06,
+      "Ts": 141.03939217022997,
+      "source": "Lemmon2004",
+      "max_abs_relative_error_pct": 0.198273464265597,
+      "rms_relative_error_pct": 0.07651512548160327,
+      "relative_error_pct_at_320K": -0.10064606969086842,
+      "mu_source_320_Pa_s": 2.1720607995797543e-05,
+      "old_shared_constants_error_320_pct": -10.189077900089327,
+      "old_shared_constants_max_error_pct": 10.521892515784359
+    },
+    "H2O": {
+      "As": 2.021933233849032e-06,
+      "Ts": 801.806493269838,
+      "source": "Huber2009",
+      "max_abs_relative_error_pct": 2.384376330637261,
+      "rms_relative_error_pct": 0.7318352559119793,
+      "relative_error_pct_at_320K": -1.094346508285149,
+      "mu_source_320_Pa_s": 1.0431642904776195e-05,
+      "old_shared_constants_error_320_pct": 87.00293429140558,
+      "old_shared_constants_max_error_pct": 88.97612021305063
+    },
+    "air": {
+      "As": 1.5193549366605398e-06,
+      "Ts": 127.05943716472858,
+      "source": "Lemmon2004",
+      "max_abs_relative_error_pct": 0.19748330701718775,
+      "rms_relative_error_pct": 0.07748895038281552,
+      "relative_error_pct_at_320K": -0.10096100074744596,
+      "mu_source_320_Pa_s": 1.9474110560529482e-05,
+      "old_shared_constants_error_320_pct": 0.17134423726055115,
+      "old_shared_constants_max_error_pct": 3.6655927764004392
+    }
+  },
+  "diffusion": {
+    "recommended_tutorial_reference": "MarreroMason1972",
+    "formula_SI": "D[m2/s]=1.87e-10*T[K]^2.072*(101325/p[Pa])",
+    "valid_T_K": [
+      282,
+      373
+    ],
+    "reference_pressure_Pa": 101325,
+    "Marrero_uncertainty_pct": 4,
+    "Marrero_uncertainty_location": "Table11, printedp34",
+    "Marrero_D_298_15": 2.505362314376117e-05,
+    "Marrero_D_300": 2.5376799380076638e-05,
+    "Marrero_D_320": 2.9007637639041477e-05,
+    "Burgess_D_298_15_from_extended_fit": 2.5252683005556245e-05,
+    "Burgess_D_320_from_extended_fit": 2.8869468233908194e-05,
+    "Burgess_tabulated_Dref_298_15": 2.54e-05,
+    "Burgess_caveat": "tabulated Dref is separately fitted near room temperature; extended fit need not exactly reproduce it",
+    "rho_N2_ideal_320_kg_m3": 1.0668405431589034,
+    "nu_N2_fitted_320_m2_s": 1.7591962449441726e-05,
+    "equivalent_Sc_320": 0.6064596734263064,
+    "D_reference_divided_by_D_Sc1_320": 1.6489142540184323,
+    "dilute_Y_assumption": "Y_H2O=1e-4 +/-2e-5 in N2; use binary dilute-gas Fick diffusion; ideal-gas pressure scaling"
+  }
+}

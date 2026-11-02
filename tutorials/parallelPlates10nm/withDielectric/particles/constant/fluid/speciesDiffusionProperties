@@ -1,0 +1,24 @@
+FoamFile
+{
+    version             2.0;
+    format              ascii;
+    class               dictionary;
+    object              speciesDiffusionProperties;
+}
+
+// H2O in dilute N2: Marrero and Mason (1972), Table 13.
+// D = Dref*(T/Tref)^temperatureExponent*(pref/p)^pressureExponent.
+// Fit range 282-373 K. Species solving is disabled in this EHD tutorial.
+model                   dilute;
+turbulentSchmidt        1;
+species
+{
+    H2O
+    {
+        D                       [0 2 -1 0 0 0 0] 2.505362314376117e-5;
+        Tref                    298.15;
+        pref                    101325;
+        temperatureExponent     2.072;
+        pressureExponent        1;
+    }
+}

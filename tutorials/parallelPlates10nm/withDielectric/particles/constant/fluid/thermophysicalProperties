@@ -1,17 +1,38 @@
-FoamFile { version 2.0; format ascii; class dictionary; object thermophysicalProperties; }
+FoamFile
+{
+    version                 2.0;
+    format                  ascii;
+    class                   dictionary;
+    object                  thermophysicalProperties;
+}
 thermoType
 {
-    type heRhoThermo;
-    mixture reactingMixture;
-    transport const;
-    thermo hConst;
-    energy sensibleEnthalpy;
-    equationOfState rhoConst;
-    specie specie;
+    type                    heRhoThermo;
+    mixture                 reactingMixture;
+    transport               sutherland;
+    thermo                  janaf;
+    energy                  sensibleEnthalpy;
+    equationOfState         perfectGas;
+    specie                  specie;
 }
-chemistryReader foamChemistryReader;
-foamChemistryFile "<constant>/fluid/foam.inp";
+chemistryReader         foamChemistryReader;
+foamChemistryFile       "<constant>/fluid/foam.inp";
 foamChemistryThermoFile "<constant>/fluid/foam.dat";
-inertSpecie N2;
-liquids { H2O; }
-solids { NaCl { defaultCoeffs no; rho 1000; Cp 850; kappa .04; Hf 0; emissivity 1; W 58; } }
+inertSpecie             N2;
+liquids
+{
+    H2O;
+}
+solids
+{
+    NaCl
+    {
+        defaultCoeffs           no;
+        rho                     1000;
+        Cp                      850;
+        kappa                   .04;
+        Hf                      0;
+        emissivity              1;
+        W                       58;
+    }
+}

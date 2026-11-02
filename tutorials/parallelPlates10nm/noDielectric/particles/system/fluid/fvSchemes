@@ -1,9 +1,21 @@
-FoamFile { version 2.0; format ascii; class dictionary; object fvSchemes; }
-ddtSchemes { default Euler; }
-gradSchemes { default Gauss linear; }
+FoamFile
+{
+    version                 2.0;
+    format                  ascii;
+    class                   dictionary;
+    object                  fvSchemes;
+}
+ddtSchemes
+{
+    default                 Euler;
+}
+gradSchemes
+{
+    default                 Gauss linear;
+}
 divSchemes
 {
-    default none;
+    default                 none;
     div(phi,U) Gauss upwind;
     div(phi,K) Gauss upwind;
     div(phi,h) Gauss upwind;
@@ -12,8 +24,25 @@ divSchemes
     div((phi|interpolate(rho)),p) Gauss linear;
     div(((rho*nuEff)*dev2(T(grad(U))))) Gauss linear;
 }
-laplacianSchemes { default Gauss linear corrected; }
-interpolationSchemes { default linear; }
-snGradSchemes { default corrected; }
-fluxRequired { default no; p_rgh; phiE; }
-wallDist { method meshWave; }
+laplacianSchemes
+{
+    default                 Gauss linear corrected;
+}
+interpolationSchemes
+{
+    default                 linear;
+}
+snGradSchemes
+{
+    default                 corrected;
+}
+fluxRequired
+{
+    default                 no;
+    p_rgh;
+    phiE;
+}
+wallDist
+{
+    method                  meshWave;
+}

@@ -1,2 +1,8 @@
-FoamFile { version 2.0; format ascii; class dictionary; object turbulenceProperties; }
-simulationType laminar;
+FoamFile
+{
+    version                 2.0;
+    format                  ascii;
+    class                   dictionary;
+    object                  turbulenceProperties;
+}
+simulationType          laminar;

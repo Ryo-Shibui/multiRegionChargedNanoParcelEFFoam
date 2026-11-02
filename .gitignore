@@ -17,3 +17,10 @@ tests/force/mpiCrossing/
 **/acceptance_results.json
 tutorials/**/[1-9]*/
 tutorials/**/0.*/
+
+# Physical tutorials keep editable native initial fields in 0.orig.
+tutorials/**/0/
+tutorials/**/polyMesh/
+tutorials/**/results/
+!tutorials/**/0.orig/
+!tutorials/**/0.orig/**

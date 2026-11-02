@@ -1,24 +1,22 @@
 {
-  "mode": "electric",
   "solid": false,
+  "phase": "particles",
   "nx": 20,
   "ny": 100,
-  "rho": 1.204,
-  "mu": 1.81e-05,
-  "Cp": 1005.0,
-  "gasKappa": 0.026,
-  "solidKappa": 1,
-  "D": 1.5033222591362126e-05,
+  "temperature": 320,
+  "pressure": 101325,
+  "mu": 1.8767818774793444e-05,
+  "diameter": 1e-08,
+  "lambda_": 6.5e-08,
+  "chargeNumber": 1,
+  "slipCorrection": 22.119101256775632,
   "expectedField": 50000.0,
-  "expectedDepositionTime": 0.0962724,
-  "meanSpeed": 0.01,
+  "expectedElectricSpeed": 0.10017582925925782,
+  "expectedDepositionTime": 0.09982447935738793,
   "particleStart": [
     0.01013,
     0.01,
     0.000513
   ],
-  "diameter": 1e-08,
-  "chargeNumber": 1,
-  "actualFlow": true,
-  "phase": "particles"
+  "meanSpeed": 0.01
 }
