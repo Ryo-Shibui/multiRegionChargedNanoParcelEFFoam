@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+cd "$(dirname "$0")"
+: "${WM_PROJECT_DIR:?Source a supported OpenCFD OpenFOAM bashrc first.}"
+wclean lagrangian/turbulence
+wclean lagrangian/intermediate
+wclean lagrangian/distributionModels
+wclean electrostatics
+wclean

@@ -1,0 +1,22 @@
+FoamFile { version 2.0; format ascii; class dictionary; object foam.dat; }
+N2
+{
+    specie { molWeight 28.0134; }
+    equationOfState { rho 1.204; }
+    thermodynamics { Cp 1005.0; Hf 0; }
+    transport { mu 1.81e-05; Pr 0.6996346153846154; }
+}
+O2
+{
+    specie { molWeight 31.9988; }
+    equationOfState { rho 1.204; }
+    thermodynamics { Cp 1005.0; Hf 0; }
+    transport { mu 1.81e-05; Pr 0.6996346153846154; }
+}
+H2O
+{
+    specie { molWeight 18.0153; }
+    equationOfState { rho 1.204; }
+    thermodynamics { Cp 1005.0; Hf 0; }
+    transport { mu 1.81e-05; Pr 0.6996346153846154; }
+}

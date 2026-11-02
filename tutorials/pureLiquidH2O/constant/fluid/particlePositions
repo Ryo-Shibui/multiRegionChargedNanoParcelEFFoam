@@ -1,0 +1,3 @@
+FoamFile {version 2.0; format ascii; class vectorField; object particlePositions;}
+1
+((.01013 .01 .000513))

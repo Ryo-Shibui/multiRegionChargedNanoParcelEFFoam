@@ -1,0 +1,6 @@
+#!/bin/bash
+set -e
+cd "$(dirname "$0")"
+wmake libso distributionModels
+wmake libso intermediate
+wmake libso turbulence

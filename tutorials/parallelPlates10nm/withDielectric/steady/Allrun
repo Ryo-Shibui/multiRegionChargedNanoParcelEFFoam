@@ -1,0 +1,7 @@
+#!/bin/bash
+set -euo pipefail
+cd "$(dirname "$0")"
+test -n "${WM_PROJECT_DIR:-}" || { echo 'Load OpenFOAM-v2406 first'; exit 1; }
+python3 ../../archiveRun.py .
+multiRegionChargedNanoParcelEFFoam -case "$PWD" > log.steady 2>&1
+python3 ../../check_native.py "$PWD"

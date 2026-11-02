@@ -1,0 +1,65 @@
+{
+  "purpose": "Two independent dilute tracers in inert N2; analytical diffusion, closure, conservation and configuration failures",
+  "schema": {
+    "path": "constant/speciesDiffusionProperties (single region) or constant/fluid/speciesDiffusionProperties",
+    "model": "dilute",
+    "background": "thermophysicalProperties/inertSpecie=N2",
+    "turbulentSchmidt": 0.9,
+    "species": {
+      "DEG": {
+        "D": 7.24e-06
+      },
+      "H2O": {
+        "D": 2e-05
+      }
+    },
+    "optionalLaw": {
+      "Tref": 298.15,
+      "pref": 101325,
+      "temperatureExponent": 1.75,
+      "pressureExponent": 1
+    }
+  },
+  "initialConditions": {
+    "DEG": "1e-4 + 2e-5 cos(pi*y/.02)",
+    "H2O": ".002 + .0005 cos(pi*y/.02)",
+    "N2": "1-DEG-H2O",
+    "carrier": "U=0, constant rho=1.204kg/m3, mu=1.81e-5Pa.s, identical constant Cp/transport per species",
+    "boundaries": "zero normal species flux; front/back symmetry"
+  },
+  "continuum": "Yi(t)=mean_i+A_i*exp(-Di*(pi/L)^2*t)*cos(pi*y/L)",
+  "discreteEuler": "A_i(t)=A_i(0)/(1+dt*Di*4*sin(pi/(2*ny))^2/(L/ny)^2)^nsteps",
+  "law": "Di=Dref*(T/Tref)^temperatureExponent*(pref/p)^pressureExponent",
+  "variants": [
+    "dilute",
+    "temperaturePressureLaw",
+    "legacyAbsent",
+    "legacyExplicit",
+    "missingD",
+    "missingSpecies",
+    "negativeD",
+    "steadyField"
+  ],
+  "acceptance": {
+    "continuumErrorOverInitialAmplitude": 0.0001,
+    "discreteEulerErrorOverInitialAmplitude": 1e-06,
+    "inferredDRelativeError": 1e-05,
+    "meanConservationAbsolute": 2e-12,
+    "sumAndBackgroundClosureAbsolute": 2e-13,
+    "runtime": "all positive cases must exit0; invalid explicit dilute dictionaries must exitnonzero with species/dictionary diagnostic"
+  },
+  "commands": {
+    "generate": "./make_cases.py [--solver NAME] [--variant NAME] [--force]",
+    "finalSuite": "./Allrun",
+    "oneVariant": "./Allrun --solver NAME --variants dilute",
+    "redEvidence": "python3 run_suite.py --stage preupgrade",
+    "standaloneCheck": "python3 check_cases.py cases/SOLVER/VARIANT"
+  },
+  "evidence": {
+    "preupgrade": "evidence/preupgrade/results.json and percase logs/output/acceptance.json",
+    "binarySnapshots": "evidence/preupgrade_bin/ and evidence/preupgrade_executables.json",
+    "upgraded": "evidence/upgraded/results.json",
+    "priorRuns": "evidence/prior_runs/"
+  },
+  "knownPreupgradeIssue": "chtReactingNanoParcelFoam writes all expected numerical outputs then aborts at shutdown with double free or corruption; numerical and process-exit results are retained separately."
+}

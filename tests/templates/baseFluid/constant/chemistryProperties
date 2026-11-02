@@ -1,0 +1,2 @@
+FoamFile { version 2.0; format ascii; class dictionary; object chemistryProperties; }
+chemistryType { solver none; method standard; } chemistry off; initialChemicalTimeStep 1e-7;

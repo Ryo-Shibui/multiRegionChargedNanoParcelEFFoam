@@ -1,0 +1,11 @@
+FoamFile { version 2.0; format ascii; class volScalarField; object phiE; }
+dimensions [1 2 -3 0 0 -1 0];
+internalField uniform 0;
+boundaryField {
+inlet { type zeroGradient; }
+outlet { type zeroGradient; }
+lowerElectrode { type fixedValue; value uniform 0; }
+dielectric_to_fluid { type electricPotentialCoupled; value uniform 0; }
+front { type symmetryPlane; }
+back { type symmetryPlane; }
+}

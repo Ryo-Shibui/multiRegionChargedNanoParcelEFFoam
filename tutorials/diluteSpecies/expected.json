@@ -1,0 +1,35 @@
+{
+  "solver": "multiRegionChargedNanoParcelEFFoam",
+  "variant": "dilute",
+  "singleRegion": false,
+  "rho": 1.204,
+  "mu": 1.81e-05,
+  "length": 0.02,
+  "nx": 20,
+  "ny": 100,
+  "dt": 0.001,
+  "endTime": 0.2,
+  "temperature": 298.15,
+  "pressure": 101325,
+  "expectedFailure": false,
+  "tracers": {
+    "DEG": {
+      "mean": 0.0001,
+      "amplitude": 2e-05,
+      "D": 7.24e-06,
+      "molWeight": 106.12,
+      "effectiveD": 7.24e-06,
+      "continuumAmplitude": 1.92980548454543e-05,
+      "discreteEulerAmplitude": 1.9298173118294118e-05
+    },
+    "H2O": {
+      "mean": 0.002,
+      "amplitude": 0.0005,
+      "D": 2e-05,
+      "molWeight": 18.0153,
+      "effectiveD": 2e-05,
+      "continuumAmplitude": 0.00045300902789446147,
+      "discreteEulerAmplitude": 0.0004530237316363881
+    }
+  }
+}

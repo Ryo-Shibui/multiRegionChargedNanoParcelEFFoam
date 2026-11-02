@@ -1,0 +1,8 @@
+FoamFile {version 2.0; format ascii; class dictionary; object speciesDiffusionProperties;}
+model dilute;
+turbulentSchmidt .9;
+species
+{
+    DEG { D [0 2 -1 0 0 0 0] 7.24e-06; }
+    H2O { D [0 2 -1 0 0 0 0] 2e-05; }
+}

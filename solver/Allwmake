@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+cd "$(dirname "$0")"
+: "${WM_PROJECT_DIR:?Source a supported OpenCFD OpenFOAM bashrc first.}"
+export WM_NCOMPPROCS="${WM_NCOMPPROCS:-2}"
+wmake libso electrostatics
+./lagrangian/Allwmake
+wmake -j "$WM_NCOMPPROCS"

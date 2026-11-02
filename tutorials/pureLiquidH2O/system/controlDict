@@ -1,0 +1,7 @@
+FoamFile {version 2.0; format ascii; class dictionary; object controlDict;}
+application multiRegionChargedNanoParcelEFFoam;
+startFrom startTime; startTime 0; stopAt endTime; endTime 1e-06; deltaT 1e-08;
+writeControl timeStep; writeInterval 100; purgeWrite 0;
+writeFormat ascii; writePrecision 16; writeCompression off;
+timeFormat general; timePrecision 12; runTimeModifiable false;
+adjustTimeStep no; maxCo .5; maxDi 10;
