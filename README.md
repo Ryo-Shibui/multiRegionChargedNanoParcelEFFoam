@@ -257,8 +257,9 @@ Before each native straight tracking segment, the model limits travel to
 It also finds the first intersection of the segment with a sphere of radius
 `(dFlying + dDeposited)/2` around each deposited centre. At contact the
 flying sphere sticks, even for a neutral deposit, and subsequently becomes
-a source. Native wall, rebound and escape handling still operates on the
-tracking point. Use a smaller cloud timestep and/or travel fraction to
+a source. The contact radius uses the flying diameter at the start of the
+segment. Native wall, rebound and escape handling operates on the tracking
+point. Use a smaller cloud timestep and/or travel fraction to
 check convergence where the force varies rapidly or deposit timing matters.
 
 With `chargedParticleDiagnostics`, a particle-on-particle event appears

@@ -217,12 +217,17 @@ void Foam::KinematicParcel<ParcelType>::readFields(CloudType& c)
         chargeNumber.setSize(c.size(), 0.0);
     }
 
-    IOField<label> depositionSite
+    IOobject depositionSiteIO
     (
-        c.newIOobject("depositionSite", IOobject::READ_IF_PRESENT),
-        readOnProc
+        c.newIOobject("depositionSite", IOobject::READ_IF_PRESENT)
     );
-    const bool haveDepositionSite = depositionSite.size() == c.size();
+    const bool haveDepositionSite = readOnProc
+        && depositionSiteIO.typeHeaderOk<IOField<label>>(true);
+    IOField<label> depositionSite(depositionSiteIO, haveDepositionSite);
+    if (haveDepositionSite)
+    {
+        c.checkFieldIOobject(c, depositionSite);
+    }
 
     label i = 0;
 
@@ -379,6 +384,12 @@ void Foam::KinematicParcel<ParcelType>::readObjects
         obr.cfindObject<IOField<scalar>>("chargeNumber");
     const auto* depositionSitePtr =
         obr.cfindObject<IOField<label>>("depositionSite");
+    if (depositionSitePtr && depositionSitePtr->size() != c.size())
+    {
+        FatalErrorInFunction
+            << "depositionSite size does not match the cloud size"
+            << exit(FatalError);
+    }
 
     label i = 0;
 

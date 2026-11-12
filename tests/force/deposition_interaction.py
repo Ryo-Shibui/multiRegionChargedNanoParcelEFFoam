@@ -5,6 +5,7 @@ import csv
 import json
 import math
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import tempfile
@@ -104,6 +105,21 @@ def read_rows(case, filename):
     return rows
 
 
+def deposition_sites(case):
+    times = [
+        path for path in case.iterdir()
+        if path.is_dir() and re.fullmatch(r"\d+(?:\.\d+)?(?:[eE][+-]?\d+)?", path.name)
+    ]
+    checkpoint = max(times, key=lambda path: float(path.name))
+    path = checkpoint / "fluid/lagrangian/reactingCloud1/depositionSite"
+    body = path.read_text().split("}", 1)[1]
+    match = re.search(r"\b(\d+)\s*\(([^()]*)\)", body)
+    assert match, f"{path}: expected a native label list"
+    sites = list(map(int, match.group(2).split()))
+    assert len(sites) == int(match.group(1)), path
+    return sorted(sites)
+
+
 def run(case, base, executable, offset_nm, enabled, seed_charge=300, restart=False):
     prepare(case, base, offset_nm, enabled, seed_charge)
     if restart:
@@ -163,15 +179,25 @@ def main():
             "shift_nm": on["x_nm"] - off["x_nm"],
         })
 
-    contact = run(output / "contact", base, executable, 0, True, seed_charge=0)
+    contact_case = output / "contact"
+    contact = run(contact_case, base, executable, 0, True, seed_charge=0)
     assert contact["patch"] == "depositedParticle", contact
     assert abs(contact["y_nm"] - 72) < 0.1, contact
+    assert deposition_sites(contact_case) == [1, 2], contact_case
+    write_control(contact_case, END + 4 * DT, latest=True)
+    run_solver(contact_case, executable, "log.contactRestart")
+    assert deposition_sites(contact_case) == [1, 2], contact_case
     restart = run(output / "restart", base, executable, 500, True, restart=True)
     reference = results[1]["on"]
     assert restart["patch"] == reference["patch"], (restart, reference)
     assert abs(restart["x_nm"] - reference["x_nm"]) < 0.1, (restart, reference)
 
-    report = {"comparisons": results, "neutral_seed_contact": contact, "restart": restart}
+    report = {
+        "comparisons": results,
+        "neutral_seed_contact": contact,
+        "retained_contact_after_restart": True,
+        "restart": restart,
+    }
     (output / "acceptance.json").write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps(report, indent=2))
     print(f"Native trajectories and acceptance report: {output}")
