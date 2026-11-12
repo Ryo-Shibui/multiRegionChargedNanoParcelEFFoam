@@ -2,6 +2,35 @@
 
 Fluid/solid electrostatics, gas flow and charged nano-parcel tracking, including dielectric interfaces and conjugate heat transfer.
 
+## Charged-particle interactions during deposition
+
+The [deposited-particle interactions branch](https://github.com/Ryo-Shibui/multiRegionChargedNanoParcelEFFoam/tree/codex/deposited-particle-interactions) adds direct Coulomb forces from retained deposits and finite-size contact with those deposits. Use this branch to study how a particle already on the collector changes the trajectory or landing position of an incoming particle.
+
+With the OpenCFD v2406 environment loaded, build and run the comparison.
+
+~~~sh
+git clone --branch codex/deposited-particle-interactions --single-branch https://github.com/Ryo-Shibui/multiRegionChargedNanoParcelEFFoam.git multiRegionChargedNanoParcelEFFoam-deposition
+cd multiRegionChargedNanoParcelEFFoam-deposition
+./Allwmake
+python3 tests/force/deposition_interaction.py
+~~~
+
+For your own transient case, add the following at the top level of `constant/<fluidRegion>/reactingCloud1Properties`. Set `nParticle 1` for the tracked particles and `stick` for the collecting patch.
+
+~~~foam
+depositedParticleInteractions
+{
+    enabled             true;
+    maxRelativeTravel   0.1;
+}
+~~~
+
+In the verified 48 nm, +300e comparison, a probe released 250 nm laterally from the deposited particle landed at 250.0 nm with interactions off and 617.5 nm with them on. The solid curves below show the on cases and the dashed lines show the off cases.
+
+![OpenFOAM v2406 on/off trajectories past one deposited 48 nm charged particle](docs/images/depositedParticleTrajectories.png)
+
+[Model settings and full benchmark](https://github.com/Ryo-Shibui/multiRegionChargedNanoParcelEFFoam/tree/codex/deposited-particle-interactions#interactions-with-deposited-particles) · [Build log and trajectory CSVs](https://github.com/Ryo-Shibui/multiRegionChargedNanoParcelEFFoam/actions/runs/43220799634)
+
 ## Start with a physical tutorial
 
 The main example is [dielectric-coated parallel plates](tutorials/parallelPlates10nm/README.md):
