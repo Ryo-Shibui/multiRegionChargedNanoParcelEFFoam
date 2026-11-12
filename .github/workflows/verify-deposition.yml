@@ -17,16 +17,36 @@ jobs:
               export DEBIAN_FRONTEND=noninteractive
               set -e
               apt-get update -qq
-              apt-get install -y -qq python3 build-essential
+              apt-get install -y -qq python3 python3-numpy build-essential
               set +e
               source /usr/lib/openfoam/openfoam2406/etc/bashrc
               set -eo pipefail
-              command -v wmake
               export WM_NCOMPPROCS=4
               ./Allwmake
               python3 tests/force/deposition_interaction.py
+              chmod -R a+rX tests/force/depositionInteraction
               python3 tests/force/run_force.py --solver multiRegionChargedNanoParcelEFFoam
             '
+      - name: Record sampled trajectories
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import csv
+          import json
+          from pathlib import Path
+          result = {}
+          for path in Path("tests/force/depositionInteraction").glob("run-*/*/probe_trajectory.csv"):
+              if not path.parent.name.startswith(("off-", "on-")):
+                  continue
+              with path.open() as stream:
+                  rows = list(csv.DictReader(stream))
+              step = max(1, len(rows) // 80)
+              result[path.parent.name] = [
+                  [round(float(row["x"])*1e9-10130000, 6), round(float(row["y"])*1e9, 6)]
+                  for row in rows[::step] + rows[-1:]
+              ]
+          print("NATIVE_TRAJECTORIES_JSON=" + json.dumps(result, separators=(",", ":")))
+          PY
       - name: Save native trajectory data
         if: always()
         uses: actions/upload-artifact@v4
