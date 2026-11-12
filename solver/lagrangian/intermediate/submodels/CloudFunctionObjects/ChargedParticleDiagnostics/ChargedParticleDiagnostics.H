@@ -3,6 +3,7 @@
 #define ChargedParticleDiagnostics_H
 #include "CloudFunctionObject.H"
 #include "wallPolyPatch.H"
+#include "processorPolyPatch.H"
 #include "OSspecific.H"
 #include "Pstream.H"
 #include <fstream>
@@ -154,7 +155,10 @@ public:
     )
     {
         // Outlet/processor patches and rebounds cannot count as deposition.
-        if (isA<wallPolyPatch>(pp) && p.active() && !deposited_.count(key(p)))
+        const bool collectPatch = isA<wallPolyPatch>(pp)
+            || (this->owner().depositedParticleInteractions()
+                && !isA<processorPolyPatch>(pp));
+        if (collectPatch && p.active() && !deposited_.count(key(p)))
         {
             pending_[key(p)] = event(p, pp.name());
         }

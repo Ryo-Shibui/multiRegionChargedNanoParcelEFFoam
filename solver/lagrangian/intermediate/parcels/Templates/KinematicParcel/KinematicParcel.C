@@ -31,7 +31,6 @@ License
 #include "integrationScheme.H"
 #include "meshTools.H"
 #include "cloudSolution.H"
-#include "wallPolyPatch.H"
 #include <cmath>
 #include <limits>
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
@@ -377,15 +376,12 @@ bool Foam::KinematicParcel<ParcelType>::move
                 displacement *= fraction;
             }
             // Track to the next face
-            if (f > 0 || !contact)
-            {
-                p.trackToFace(displacement, f);
-            }
-            // A mesh face can stop the track before the proposed contact.
+            const scalar remaining =
+                f > 0 || !contact ? p.trackToFace(displacement, f) : 0;
+            // Process an earlier mesh face first. Contact at the start or
+            // exactly on the end face still stops the particle.
             contact = contact
-                && p.stepFraction() + 16*std::numeric_limits<scalar>::epsilon()
-                    >= sfrac + f
-                && !p.onBoundaryFace();
+                && remaining <= 16*std::numeric_limits<scalar>::epsilon();
         }
         else
         {
@@ -493,7 +489,7 @@ bool Foam::KinematicParcel<ParcelType>::hitPatch
 
         // Invoke patch interaction model
         const bool handled = cloud.patchInteraction().correct(p, pp, td.keepParticle);
-        if (handled && td.keepParticle && !p.active() && isA<wallPolyPatch>(pp))
+        if (handled && td.keepParticle && !p.active())
         {
             p.depositionSite(p.dpWall);
         }

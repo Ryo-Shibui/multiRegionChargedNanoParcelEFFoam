@@ -7,20 +7,32 @@ permissions:
 jobs:
   openfoam:
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - name: Build and run OpenFOAM v2406 comparison
         run: |
           docker run --rm --user 0:0 -v "$PWD:/work" -w /work --entrypoint /bin/bash \
             opencfd/openfoam-default:2406 -lc '
+              export DEBIAN_FRONTEND=noninteractive
               set -e
-              if ! command -v python3 >/dev/null; then
-                apt-get update -qq
-                apt-get install -y -qq python3
-              fi
+              apt-get update -qq
+              apt-get install -y -qq python3 build-essential
+              set +e
               source /usr/lib/openfoam/openfoam2406/etc/bashrc
+              set -eo pipefail
+              command -v wmake
               export WM_NCOMPPROCS=4
               ./Allwmake
               python3 tests/force/deposition_interaction.py
+              python3 tests/force/run_force.py --solver multiRegionChargedNanoParcelEFFoam
             '
+      - name: Save native trajectory data
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-deposition-comparison
+          path: |
+            tests/force/depositionInteraction/run-*/acceptance.json
+            tests/force/depositionInteraction/run-*/*/probe_trajectory.csv
+          if-no-files-found: ignore
