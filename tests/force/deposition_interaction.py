@@ -52,11 +52,13 @@ def injection(name, charge, time):
 
 def write_control(case, end, latest=False):
     start = "latestTime" if latest else "startTime"
+    # A scheduled write saves injector counters along with parcel fields.
+    write_step = round(end / DT)
     cases.write(case / "system/controlDict", f"""
 application {SOLVER};
 startFrom {start}; startTime 0; stopAt endTime;
 endTime {end:.17g}; deltaT {DT:.17g};
-writeControl timeStep; writeInterval 10000; purgeWrite 0;
+writeControl timeStep; writeInterval {write_step}; purgeWrite 0;
 writeFormat ascii; writePrecision 17; writeCompression off;
 timeFormat general; timePrecision 14; runTimeModifiable false;
 adjustTimeStep no; maxCo .5; maxDi 10;

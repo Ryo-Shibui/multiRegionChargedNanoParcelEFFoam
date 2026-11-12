@@ -244,6 +244,8 @@ hit point. Deposits formed on other particles already store their centres.
 The native lagrangian checkpoint retains the deposit classification for
 restarts. Older field-based checkpoints infer a wall deposit from an
 inactive wall-face position.
+Use a scheduled write for a restart checkpoint so native injector progress
+is saved alongside the parcel fields.
 
 Each tracked particle feels the direct Coulomb sum from all deposits in
 its fluid region, in addition to the prescribed/solved `CoulombSep` force.
