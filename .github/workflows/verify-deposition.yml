@@ -24,9 +24,14 @@ jobs:
               export WM_NCOMPPROCS=4
               ./Allwmake
               python3 tests/force/deposition_interaction.py
-              chmod -R a+rX tests/force/depositionInteraction
               python3 tests/force/run_force.py --solver multiRegionChargedNanoParcelEFFoam
             '
+      - name: Allow access to generated case data
+        if: always()
+        run: |
+          if [ -d tests/force/depositionInteraction ]; then
+            sudo chmod -R a+rX tests/force/depositionInteraction
+          fi
       - name: Record sampled trajectories
         if: always()
         run: |
