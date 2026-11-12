@@ -217,13 +217,12 @@ void Foam::KinematicParcel<ParcelType>::readFields(CloudType& c)
         chargeNumber.setSize(c.size(), 0.0);
     }
 
-    IOobject depositionSiteIO
+    IOField<label> depositionSite
     (
-        c.newIOobject("depositionSite", IOobject::READ_IF_PRESENT)
+        c.newIOobject("depositionSite", IOobject::READ_IF_PRESENT),
+        readOnProc
     );
-    const bool haveDepositionSite = readOnProc
-        && depositionSiteIO.typeHeaderOk<IOField<label>>(true);
-    IOField<label> depositionSite(depositionSiteIO, haveDepositionSite);
+    const bool haveDepositionSite = !depositionSite.empty();
     if (haveDepositionSite)
     {
         c.checkFieldIOobject(c, depositionSite);

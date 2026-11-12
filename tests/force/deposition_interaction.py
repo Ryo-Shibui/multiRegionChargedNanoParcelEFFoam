@@ -183,10 +183,12 @@ def main():
     contact = run(contact_case, base, executable, 0, True, seed_charge=0)
     assert contact["patch"] == "depositedParticle", contact
     assert abs(contact["y_nm"] - 72) < 0.1, contact
-    assert deposition_sites(contact_case) == [1, 2], contact_case
+    original_sites = deposition_sites(contact_case)
+    assert original_sites == [1, 2], (contact_case, original_sites)
     write_control(contact_case, END + 4 * DT, latest=True)
     run_solver(contact_case, executable, "log.contactRestart")
-    assert deposition_sites(contact_case) == [1, 2], contact_case
+    restarted_sites = deposition_sites(contact_case)
+    assert restarted_sites == original_sites, (contact_case, original_sites, restarted_sites)
     restart = run(output / "restart", base, executable, 500, True, restart=True)
     reference = results[1]["on"]
     assert restart["patch"] == reference["patch"], (restart, reference)
