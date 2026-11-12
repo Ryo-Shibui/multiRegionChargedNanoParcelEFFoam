@@ -2,6 +2,8 @@
 
 Fluid/solid electrostatics, gas flow and charged nano-parcel tracking, including dielectric interfaces and conjugate heat transfer.
 
+To run a case with direct Coulomb forces and finite-size contact between flying and deposited particles, see [the cloud settings](#interactions-with-deposited-particles) and [the OpenFOAM v2406 comparison](#reproduce-the-deposited-particle-benchmark).
+
 ## Start with a physical tutorial
 
 The main example is [dielectric-coated parallel plates](tutorials/parallelPlates10nm/README.md):
@@ -274,6 +276,29 @@ at three lateral offsets, checks neutral contact and verifies a restart.
 `solution/coupled false` freezes parcel feedback; true enables implemented
 mass/species/momentum/enthalpy source coupling. It does not create electric
 space-charge feedback or a continuum gas charge equation.
+
+### Reproduce the deposited-particle benchmark
+
+With OpenCFD v2406 loaded, run from the repository root.
+
+~~~sh
+./Allwmake
+python3 tests/force/deposition_interaction.py
+~~~
+
+The script generates separate on/off cases in `tests/force/depositionInteraction/run-*` and saves `probe_trajectory.csv` in each case and `acceptance.json` for the run.
+
+The gas is at rest and the applied field is 1.25 MV/m towards the collector. Both particles have diameter 48 nm and charge +300e. The first particle sticks to the collector before the second is released at 1.2 µm above the wall. Lateral positions are measured from the retained particle's centre. The following results are from a serial v2406 run.
+
+| Initial lateral offset (nm) | Landing x, off (nm) | Landing x, on (nm) | Outward shift (nm) | Flight time, off → on (ns) |
+|---:|---:|---:|---:|---:|
+| 250 | 250.0 | 617.5 | +367.5 | 31.78 → 43.67 |
+| 500 | 500.0 | 666.5 | +166.5 | 31.78 → 36.06 |
+| 1,000 | 1,000.0 | 1,077.8 | +77.8 | 31.78 → 33.08 |
+
+![OpenFOAM v2406 on/off trajectories past one deposited 48 nm charged particle](docs/images/depositedParticleTrajectories.png)
+
+A separate head-on run with a neutral deposit records sphere contact at a probe centre height of 72 nm, the sum of the deposit centre height (24 nm) and the contact distance (48 nm). Restart checks reproduced the landing position and preserved the particle-on-particle deposit classification. [Build log and trajectory CSVs](https://github.com/Ryo-Shibui/multiRegionChargedNanoParcelEFFoam/actions/runs/43220799634)
 
 ## Select which equations to solve
 
