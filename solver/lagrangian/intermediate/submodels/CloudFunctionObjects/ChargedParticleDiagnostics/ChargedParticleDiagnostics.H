@@ -140,6 +140,10 @@ public:
     {
         confirm(p);
         openFiles();
+        if (td.depositedParticleContact && deposited_.insert(key(p)).second)
+        {
+            row(deposition_, event(p, "depositedParticle"));
+        }
         row(trajectory_, event(p, word::null));
         return true;
     }

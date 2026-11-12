@@ -43,6 +43,9 @@ License
 #include "DampingModel.H"
 #include "IsotropyModel.H"
 #include "TimeScaleModel.H"
+#include "depositionPair.H"
+#include "Pstream.H"
+#include "wallPolyPatch.H"
 
 // * * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * //
 
@@ -483,6 +486,26 @@ Foam::KinematicCloud<CloudType>::KinematicCloud
     ),
     log(true)
 {
+    const dictionary deposition
+    (
+        particleProperties_.subOrEmptyDict("depositedParticleInteractions")
+    );
+    depositedParticleInteractions_ = deposition.getOrDefault("enabled", false);
+    depositionMaxRelativeTravel_ =
+        deposition.getOrDefault<scalar>("maxRelativeTravel", 0.1);
+    if
+    (
+        depositedParticleInteractions_
+     && (solution_.steadyState() || !(depositionMaxRelativeTravel_ > 0
+         && depositionMaxRelativeTravel_ <= 1))
+    )
+    {
+        FatalErrorInFunction
+            << "depositedParticleInteractions requires transient tracking "
+            << "and 0 < maxRelativeTravel <= 1"
+            << exit(FatalError);
+    }
+
     if (solution_.active())
     {
         setModels();
@@ -520,6 +543,9 @@ Foam::KinematicCloud<CloudType>::KinematicCloud
     rndGen_(c.rndGen_, true),
     cellOccupancyPtr_(nullptr),
     cellLengthScale_(c.cellLengthScale_),
+    depositionSources_(c.depositionSources_),
+    depositedParticleInteractions_(c.depositedParticleInteractions_),
+    depositionMaxRelativeTravel_(c.depositionMaxRelativeTravel_),
     rho_(c.rho_),
     U_(c.U_),
     mu_(c.mu_),
@@ -782,6 +808,125 @@ void Foam::KinematicCloud<CloudType>::scaleSources()
 
 
 template<class CloudType>
+void Foam::KinematicCloud<CloudType>::checkDepositionParcel
+(
+    const parcelType& p
+) const
+{
+    if (p.nParticle() != 1 || !(p.d() > 0) || !std::isfinite(p.d()))
+    {
+        FatalErrorInFunction
+            << "depositedParticleInteractions requires nParticle=1 and a "
+            << "finite positive diameter; parcel "
+            << p.origProc() << ':' << p.origId()
+            << ", nParticle=" << p.nParticle() << ", d=" << p.d()
+            << exit(FatalError);
+    }
+}
+
+
+template<class CloudType>
+bool Foam::KinematicCloud<CloudType>::isDepositedParticle(const parcelType& p) const
+{
+    if (p.active())
+    {
+        return false;
+    }
+    if (p.depositionSite() == parcelType::dpLegacy)
+    {
+        // Older field-based checkpoints have no deposition marker. The
+        // boundary-face tetrahedron and coordinates survive positions I/O.
+        const label facei = p.currentTetIndices().face();
+        return facei >= mesh_.nInternalFaces()
+            && mag(p.coordinates()[0]) <= SMALL
+            && isA<wallPolyPatch>
+               (mesh_.boundaryMesh()[mesh_.boundaryMesh().whichPatch(facei)]);
+    }
+    return p.depositionSite() == parcelType::dpWall
+        || p.depositionSite() == parcelType::dpParticle;
+}
+
+
+template<class CloudType>
+Foam::vector Foam::KinematicCloud<CloudType>::depositedParticleForce
+(
+    const parcelType& p
+) const
+{
+    vector force(Zero);
+    const scalar q = p.chargeNumber()*depositionPair::elementaryCharge;
+    if (q == 0)
+    {
+        return force;
+    }
+
+    const point position = p.position();
+    const scalar radius = 0.5*p.d();
+    const scalar epsilonR = mesh_.lookupObject<volScalarField>("epsilonR")[p.cell()];
+    for (const auto& rankSources : depositionSources_)
+    {
+        for (const auto& source : rankSources)
+        {
+            const scalar sourceCharge = source.second().second();
+            if (sourceCharge != 0)
+            {
+                const vector separation = position - source.first();
+                force += depositionPair::forceCoefficient
+                (
+                    q, sourceCharge, epsilonR, magSqr(separation),
+                    sqr(radius + source.second().first())
+                )*separation;
+            }
+        }
+    }
+    return force;
+}
+
+
+template<class CloudType>
+Foam::scalar Foam::KinematicCloud<CloudType>::limitDepositionStep
+(
+    const parcelType& p,
+    const point& start,
+    const vector& displacement,
+    bool& contact
+) const
+{
+    const scalar radius = 0.5*p.d();
+    const scalar displacementSquared = magSqr(displacement);
+    scalar nearestSquared = GREAT;
+    scalar firstHit = 2;
+    for (const auto& rankSources : depositionSources_)
+    {
+        for (const auto& source : rankSources)
+        {
+            const vector separation = start - source.first();
+            const scalar distanceSquared = magSqr(separation);
+            nearestSquared = min(nearestSquared, distanceSquared);
+            firstHit = min
+            (
+                firstHit,
+                depositionPair::firstContact
+                (
+                    distanceSquared, separation & displacement,
+                    displacementSquared, sqr(radius + source.second().first())
+                )
+            );
+        }
+    }
+
+    scalar step = 1;
+    if (displacementSquared > 0 && nearestSquared < GREAT)
+    {
+        step = min(step, depositionMaxRelativeTravel_
+            *sqrt(nearestSquared)/sqrt(displacementSquared));
+    }
+    contact = firstHit <= step;
+    return min(firstHit, step);
+}
+
+
+template<class CloudType>
 void Foam::KinematicCloud<CloudType>::preEvolve
 (
     const typename parcelType::trackingData& td
@@ -792,6 +937,38 @@ void Foam::KinematicCloud<CloudType>::preEvolve
     label nGeometricD = mesh_.nGeometricD();
 
     Log_<< "\nSolving" << nGeometricD << "-D cloud " << this->name() << endl;
+
+    if (depositedParticleInteractions_)
+    {
+        DynamicList<depositSource> local;
+        for (const auto& p : *this)
+        {
+            if (isDepositedParticle(p))
+            {
+                checkDepositionParcel(p);
+                const scalar radius = 0.5*p.d();
+                point centre = p.position();
+                if (p.depositionSite() != parcelType::dpParticle)
+                {
+                    // Native stick stores the tracking point on the wall.
+                    const vector area =
+                        mesh_.faceAreas()[p.currentTetIndices().face()];
+                    centre -= radius*area/mag(area);
+                }
+                local.append
+                (
+                    depositSource
+                    (
+                        centre,
+                        Pair<scalar>(radius, p.chargeNumber()*depositionPair::elementaryCharge)
+                    )
+                );
+            }
+        }
+        depositionSources_.setSize(Pstream::nProcs());
+        depositionSources_[Pstream::myProcNo()].transfer(local);
+        Pstream::allGatherList(depositionSources_);
+    }
 
     this->dispersion().cacheFields(true);
     forces_.cacheFields(true);

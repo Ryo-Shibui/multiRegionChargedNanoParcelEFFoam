@@ -5,6 +5,7 @@ test -n "${WM_PROJECT_DIR:-}" || { echo 'Source a supported OpenCFD OpenFOAM env
 python3 run_suite.py --stage upgraded --solver multiRegionChargedNanoParcelEFFoam "$@"
 python3 turbulence_check.py multiRegionChargedNanoParcelEFFoam
 python3 force/run_force.py --solver multiRegionChargedNanoParcelEFFoam
+python3 force/deposition_interaction.py
 python3 force/pure_liquid.py run --solver multiRegionChargedNanoParcelEFFoam
 if [ "${RUN_MPI:-0}" = 1 ]; then
   if [ -d force/mpiCrossing/case/processor0 ]; then

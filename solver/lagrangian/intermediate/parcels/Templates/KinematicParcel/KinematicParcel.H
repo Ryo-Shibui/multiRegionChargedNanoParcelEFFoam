@@ -173,6 +173,9 @@ public:
             tpRotationalTrack
         };
 
+        //- This postMove callback ends in contact with a retained deposit
+        bool depositedParticleContact = false;
+
 
     private:
 
@@ -341,6 +344,9 @@ protected:
             //- Signed elementary-charge count []
             scalar chargeNumber_;
 
+            //- Persist the actual cause of immobilization across restart
+            label depositionSite_ = 0;
+
 
 
 public:
@@ -386,6 +392,17 @@ public:
         TypeName("KinematicParcel");
 
         //- String representation of properties
+        enum depositionSiteType
+        {
+            dpLegacy = -1,
+            dpNone = 0,
+            dpWall,
+            dpParticle
+        };
+
+        label depositionSite() const { return depositionSite_; }
+        void depositionSite(const label site) { depositionSite_ = site; }
+
         AddToPropertyList
         (
             ParcelType,
@@ -401,6 +418,7 @@ public:
           + " (UTurbx UTurby UTurbz)"
           + " (UCorrectx UCorrecty UCorrectz)"
           + " chargeNumber"
+          + " depositionSite"
         );
 
 

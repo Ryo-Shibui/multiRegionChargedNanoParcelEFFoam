@@ -31,7 +31,9 @@ License
 #include "integrationScheme.H"
 #include "meshTools.H"
 #include "cloudSolution.H"
+#include "wallPolyPatch.H"
 #include <cmath>
+#include <limits>
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
 template<class ParcelType>
@@ -205,6 +207,8 @@ const Foam::vector Foam::KinematicParcel<ParcelType>::calcVelocity
     const forceSuSp Fcp = forces.calcCoupled(p, ttd, dt, mass, Re, mu);
     const forceSuSp Fncp = forces.calcNonCoupled(p, ttd, dt, mass, Re, mu);
     const scalar massEff = forces.massEff(p, ttd, mass);
+    const vector depositionForce = p.active() && cloud.depositedParticleInteractions()
+        ? cloud.depositedParticleForce(p) : vector(Zero);
 
     /*
     // Proper splitting ...
@@ -231,7 +235,7 @@ const Foam::vector Foam::KinematicParcel<ParcelType>::calcVelocity
     // Shortcut splitting assuming no implicit non-coupled force ...
     // Calculate the integration coefficients
     const vector acp = (Fcp.Sp()*td.Uc() + Fcp.Su())/massEff;
-    const vector ancp = (Fncp.Su() + Su)/massEff;
+    const vector ancp = (Fncp.Su() + Su + depositionForce)/massEff;
     const scalar bcp = Fcp.Sp()/massEff;
 
     // Integrate to find the new parcel velocity
@@ -275,7 +279,8 @@ Foam::KinematicParcel<ParcelType>::KinematicParcel
     tTurb_(p.tTurb_),
     UTurb_(p.UTurb_),
     UCorrect_(p.UCorrect_),
-    chargeNumber_(p.chargeNumber_)
+    chargeNumber_(p.chargeNumber_),
+    depositionSite_(p.depositionSite_)
 {}
 
 
@@ -298,7 +303,8 @@ Foam::KinematicParcel<ParcelType>::KinematicParcel
     tTurb_(p.tTurb_),
     UTurb_(p.UTurb_),
     UCorrect_(p.UCorrect_),
-    chargeNumber_(p.chargeNumber_)
+    chargeNumber_(p.chargeNumber_),
+    depositionSite_(p.depositionSite_)
 {}
 
 
@@ -323,6 +329,20 @@ bool Foam::KinematicParcel<ParcelType>::move
     const cloudSolution& solution = cloud.solution();
     const scalarField& cellLengthScale = cloud.cellLengthScale();
     const scalar maxCo = solution.maxCo();
+    const bool interactWithDeposits = cloud.depositedParticleInteractions();
+    if (interactWithDeposits)
+    {
+        if (cloud.isDepositedParticle(p))
+        {
+            // Retain the deposit's position, diameter and charge on restart.
+            p.stepFraction() = 1;
+            return true;
+        }
+        if (p.active())
+        {
+            cloud.checkDepositionParcel(p);
+        }
+    }
 
     while (ttd.keepParticle && !ttd.switchProcessor && p.stepFraction() < 1)
     {
@@ -345,10 +365,27 @@ bool Foam::KinematicParcel<ParcelType>::move
         scalar f = 1 - p.stepFraction();
         f = min(f, maxCo);
         f = min(f, maxCo*l/max(SMALL*l, mag(s)));
+        bool contact = false;
         if (p.active())
         {
+            vector displacement = f*s - d;
+            if (interactWithDeposits)
+            {
+                const scalar fraction =
+                    cloud.limitDepositionStep(p, start, displacement, contact);
+                f *= fraction;
+                displacement *= fraction;
+            }
             // Track to the next face
-            p.trackToFace(f*s - d, f);
+            if (f > 0 || !contact)
+            {
+                p.trackToFace(displacement, f);
+            }
+            // A mesh face can stop the track before the proposed contact.
+            contact = contact
+                && p.stepFraction() + 16*std::numeric_limits<scalar>::epsilon()
+                    >= sfrac + f
+                && !p.onBoundaryFace();
         }
         else
         {
@@ -382,16 +419,33 @@ bool Foam::KinematicParcel<ParcelType>::move
 
         p.age() += dt;
 
+        if (contact)
+        {
+            p.active(false);
+            p.depositionSite(p.dpParticle);
+            p.U() = Zero;
+        }
+
         if (p.active() && p.onFace())
         {
             ttd.keepParticle = cloud.functions().postFace(p, ttd);
         }
 
+        ttd.depositedParticleContact = contact;
         ttd.keepParticle = cloud.functions().postMove(p, dt, start, ttd);
+        ttd.depositedParticleContact = false;
+        if (contact)
+        {
+            return ttd.keepParticle;
+        }
 
         if (p.active() && p.onFace() && ttd.keepParticle)
         {
             p.hitFace(s, cloud, ttd);
+            if (interactWithDeposits && cloud.isDepositedParticle(p))
+            {
+                return ttd.keepParticle;
+            }
         }
     }
 
@@ -438,7 +492,12 @@ bool Foam::KinematicParcel<ParcelType>::hitPatch
         }
 
         // Invoke patch interaction model
-        return cloud.patchInteraction().correct(p, pp, td.keepParticle);
+        const bool handled = cloud.patchInteraction().correct(p, pp, td.keepParticle);
+        if (handled && td.keepParticle && !p.active() && isA<wallPolyPatch>(pp))
+        {
+            p.depositionSite(p.dpWall);
+        }
+        return handled;
     }
 }
 

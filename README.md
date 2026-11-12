@@ -214,10 +214,59 @@ represented count. Native `chargeNumber` output is preserved on restart and
 processor transfer; missing charge in older field-based clouds defaults to zero.
 Keep a charged restart's charge file and use a matching scalar/label build.
 
-Set stick/escape/rebound explicitly with native patch interaction. Tracking is
-point-particle tracking. Brownian motion, image forces, dielectrophoresis,
-gravity and other mechanisms are not automatically supplied by the two forces.
-They are disabled in deterministic verification cases to expose electric drift.
+Set stick/escape/rebound explicitly with native patch interaction. Wall
+tracking uses the native point-particle path. Brownian motion, image forces,
+dielectrophoresis and gravity are not supplied by the two forces. They are
+disabled in deterministic verification cases to expose electric drift.
+
+### Interactions with deposited particles
+
+Add this optional block at the top level of `constant/<fluid>/reactingCloud1Properties`:
+
+~~~foam
+depositedParticleInteractions
+{
+    enabled             true;
+    maxRelativeTravel   0.1;
+}
+~~~
+
+The mode defaults to off. Enable it for transient tracking with
+`nParticle 1`, positive particle diameters, and collecting patches configured
+to retain particles with `stick`. A parcel representing multiple particles
+does not define individual sphere centres for this model.
+
+At the start of each cloud timestep, the solver takes a snapshot of the
+retained deposits in the current fluid region, including other MPI ranks.
+New deposits become sources at the next cloud timestep. A wall-stuck
+particle's physical centre is one radius into the gas from its native wall
+hit point. Deposits formed on other particles already store their centres.
+The native lagrangian checkpoint retains the deposit classification for
+restarts. Older field-based checkpoints infer a wall deposit from an
+inactive wall-face position.
+
+Each tracked particle feels the direct Coulomb sum from all deposits in
+its fluid region, in addition to the prescribed/solved `CoulombSep` force.
+The pair law uses the fluid region's `epsilonR`, with no distance cutoff or
+dielectric image correction. It adds an explicit force per physical particle
+to the parcel velocity integrator. It does not modify the mesh fields
+`phiE` or `E`.
+
+Before each native straight tracking segment, the model limits travel to
+`maxRelativeTravel` times the distance to the nearest deposited centre.
+It also finds the first intersection of the segment with a sphere of radius
+`(dFlying + dDeposited)/2` around each deposited centre. At contact the
+flying sphere sticks, even for a neutral deposit, and subsequently becomes
+a source. Native wall, rebound and escape handling still operates on the
+tracking point. Use a smaller cloud timestep and/or travel fraction to
+check convergence where the force varies rapidly or deposit timing matters.
+
+With `chargedParticleDiagnostics`, a particle-on-particle event appears
+in `deposition.csv` as `depositedParticle`; its coordinates are the centre
+at contact. Wall events retain the patch name and wall hit coordinates.
+The native comparison
+`python3 tests/force/deposition_interaction.py` runs on/off trajectories
+at three lateral offsets, checks neutral contact and verifies a restart.
 
 `solution/coupled false` freezes parcel feedback; true enables implemented
 mass/species/momentum/enthalpy source coupling. It does not create electric
@@ -259,10 +308,10 @@ false keeps prescribed/frozen E. Global `maxElectricIterations` and
 `electricTolerance` control electric iteration. The tolerance monitors potential
 change; it is not itself a field-error bound.
 
-No gas free-charge transport, corona model, deposited surface-charge evolution,
-particle space charge or self-consistent gas qE body force is added. The primary
-case demonstrates electrostatics, flow and one-way particle forcing. It does
-not claim those additional EHD mechanisms.
+The electric field solve has no gas free-charge transport, corona model,
+deposited surface-charge boundary condition, particle space charge or
+self-consistent gas qE body force. Deposited-particle interactions are
+evaluated in the Lagrangian tracker when enabled.
 
 Use a steady carrier/field phase with parcels disabled, followed by transient
 physical particle time. A steadyState iteration number is not flight time.

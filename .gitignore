@@ -13,6 +13,7 @@ tests/force/evidence/
 tests/force/pureLiquid/
 tests/force/longTracking/
 tests/force/mpiCrossing/
+tests/force/depositionInteraction/
 **/acceptance.json
 **/acceptance_results.json
 tutorials/**/[1-9]*/

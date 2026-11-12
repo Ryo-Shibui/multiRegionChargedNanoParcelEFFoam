@@ -70,6 +70,8 @@ SourceFiles
 
 #include "ParticleForceList.H"
 #include "CloudFunctionObjectList.H"
+#include "Pair.H"
+#include "Tuple2.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -183,6 +185,12 @@ protected:
 
         //- Cell length scale
         scalarField cellLengthScale_;
+
+        //- Centre, radius and charge in C for the retained deposits, by rank
+        using depositSource = Tuple2<point, Pair<scalar>>;
+        List<List<depositSource>> depositionSources_;
+        bool depositedParticleInteractions_ = false;
+        scalar depositionMaxRelativeTravel_ = 0.1;
 
 
         // References to the carrier gas fields
@@ -411,6 +419,29 @@ public:
                 //  responsible for updating it for its own purposes
                 //  if particles are removed or created.
                 inline List<DynamicList<parcelType*>>& cellOccupancy();
+
+            //- Use retained deposits as fixed collision and charge sources
+            bool depositedParticleInteractions() const
+            {
+                return depositedParticleInteractions_;
+            }
+
+            //- Validate that the parcel represents one physical sphere
+            void checkDepositionParcel(const parcelType& p) const;
+
+            bool isDepositedParticle(const parcelType& p) const;
+
+            //- Explicit electrostatic force per flying particle
+            vector depositedParticleForce(const parcelType& p) const;
+
+            //- Limit a trial centre displacement by source distance and contact
+            scalar limitDepositionStep
+            (
+                const parcelType& p,
+                const point& start,
+                const vector& displacement,
+                bool& contact
+            ) const;
 
                 //- Return the cell length scale
                 inline const scalarField& cellLengthScale() const;

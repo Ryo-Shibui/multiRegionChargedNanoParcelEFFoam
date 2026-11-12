@@ -86,7 +86,8 @@ Foam::KinematicParcel<ParcelType>::KinematicParcel
                 >> tTurb_
                 >> UTurb_
                 >> UCorrect_
-                >> chargeNumber_;
+                >> chargeNumber_
+                >> depositionSite_;
         }
         else if (!is.checkLabelSize<>() || !is.checkScalarSize<>())
         {
@@ -106,6 +107,7 @@ Foam::KinematicParcel<ParcelType>::KinematicParcel
             readRawScalar(is, UTurb_.data(), vector::nComponents);
             readRawScalar(is, UCorrect_.data(), vector::nComponents);
             readRawScalar(is, &chargeNumber_);
+            readRawLabel(is, &depositionSite_);
 
             is.endRawRead();
         }
@@ -215,6 +217,13 @@ void Foam::KinematicParcel<ParcelType>::readFields(CloudType& c)
         chargeNumber.setSize(c.size(), 0.0);
     }
 
+    IOField<label> depositionSite
+    (
+        c.newIOobject("depositionSite", IOobject::READ_IF_PRESENT),
+        readOnProc
+    );
+    const bool haveDepositionSite = depositionSite.size() == c.size();
+
     label i = 0;
 
     for (KinematicParcel<ParcelType>& p : c)
@@ -231,6 +240,7 @@ void Foam::KinematicParcel<ParcelType>::readFields(CloudType& c)
         p.UTurb_ = UTurb[i];
         p.UCorrect_ = UCorrect[i];
         p.chargeNumber_ = chargeNumber[i];
+        p.depositionSite_ = haveDepositionSite ? depositionSite[i] : dpLegacy;
 
         ++i;
     }
@@ -267,6 +277,11 @@ void Foam::KinematicParcel<ParcelType>::writeFields(const CloudType& c)
         np
     );
 
+    IOField<label> depositionSite
+    (
+        c.newIOobject("depositionSite", IOobject::NO_READ),
+        np
+    );
     label i = 0;
 
     for (const KinematicParcel<ParcelType>& p : c)
@@ -283,6 +298,7 @@ void Foam::KinematicParcel<ParcelType>::writeFields(const CloudType& c)
         UTurb[i] = p.UTurb();
         UCorrect[i] = p.UCorrect();
         chargeNumber[i] = p.chargeNumber();
+        depositionSite[i] = p.depositionSite();
 
         ++i;
     }
@@ -299,6 +315,7 @@ void Foam::KinematicParcel<ParcelType>::writeFields(const CloudType& c)
     UTurb.write(writeOnProc);
     UCorrect.write(writeOnProc);
     chargeNumber.write(writeOnProc);
+    depositionSite.write(writeOnProc);
 }
 
 
@@ -329,6 +346,7 @@ void Foam::KinematicParcel<ParcelType>::writeProperties
     writeProp("UTurb", UTurb_);
     writeProp("UCorrect", UCorrect_);
     writeProp("chargeNumber", chargeNumber_);
+    writeProp("depositionSite", depositionSite_);
 
     #undef writeProp
 }
@@ -359,6 +377,8 @@ void Foam::KinematicParcel<ParcelType>::readObjects
     const auto& UCorrect = cloud::lookupIOField<vector>("UCorrect", obr);
     const auto* chargeNumberPtr =
         obr.cfindObject<IOField<scalar>>("chargeNumber");
+    const auto* depositionSitePtr =
+        obr.cfindObject<IOField<label>>("depositionSite");
 
     label i = 0;
 
@@ -376,6 +396,7 @@ void Foam::KinematicParcel<ParcelType>::readObjects
         p.UTurb_ = UTurb[i];
         p.UCorrect_ = UCorrect[i];
         p.chargeNumber_ = chargeNumberPtr ? (*chargeNumberPtr)[i] : 0.0;
+        p.depositionSite_ = depositionSitePtr ? (*depositionSitePtr)[i] : dpLegacy;
 
         ++i;
     }
@@ -411,6 +432,7 @@ void Foam::KinematicParcel<ParcelType>::writeObjects
         np,
         obr
     );
+    auto& depositionSite = cloud::createIOField<label>("depositionSite", np, obr);
 
     label i = 0;
 
@@ -428,6 +450,7 @@ void Foam::KinematicParcel<ParcelType>::writeObjects
         UTurb[i] = p.UTurb();
         UCorrect[i] = p.UCorrect();
         chargeNumber[i] = p.chargeNumber();
+        depositionSite[i] = p.depositionSite();
 
         ++i;
     }
@@ -457,7 +480,8 @@ Foam::Ostream& Foam::operator<<
             << token::SPACE << p.tTurb()
             << token::SPACE << p.UTurb()
             << token::SPACE << p.UCorrect()
-            << token::SPACE << p.chargeNumber();
+            << token::SPACE << p.chargeNumber()
+            << token::SPACE << p.depositionSite();
     }
     else
     {
